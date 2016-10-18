@@ -19,8 +19,5 @@
 3、运行`LLWeChat.xcworkspace`  <br/>
 4、需要真机调试，需要修改`Bundle Identifier` <br/>
 
-
-
-
 ##Licenses
 本项目LL-开头的所有源码遵守MIT license. 
