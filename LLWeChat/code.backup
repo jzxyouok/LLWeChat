@@ -1,0 +1,409 @@
+self.thumbnailImageView.image = [UIImage imageNamed:@"PhotoDownloadfailedSamll"]
+
+
+switch (messageModel.messageBodyType) {
+case kLLMessageBodyTypeText: {
+LLMessageTextCell *cell = _cell;
+if (!cell) {
+cell = [[LLMessageTextCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseId];
+[cell prepareForUse:messageModel.isFromMe];
+cell.delegate = self;
+}
+
+cell.messageModel = messageModel;
+
+_cell = cell;
+break;
+}
+case kLLMessageBodyTypeDateTime: {
+LLMessageDateCell *cell = _cell;
+if (!cell) {
+cell = [[LLMessageDateCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseId];
+}
+cell.messageModel = messageModel;
+
+_cell = cell;
+break;
+}
+case kLLMessageBodyTypeImage: {
+LLMessageImageCell *cell = _cell;
+if (!cell) {
+cell = [(LLMessageImageCell *)[LLMessageImageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseId];
+[cell prepareForUse:messageModel.isFromMe];
+cell.delegate = self;
+
+}
+cell.messageModel = messageModel;
+
+if (!messageModel.thumbnailImage && !messageModel.isFetchingThumbnail) {
+WEAK_SELF;
+messageModel.isFetchingThumbnail = YES;
+[[LLChatManager sharedManager] asyncDownloadMessageThumbnail:messageModel completion:^(LLMessageModel *messageModel, LLError *error) {
+messageModel.isFetchingThumbnail = NO;
+[weakSelf reloadTableRowWithModel:messageModel];
+}];
+}
+_cell = cell;
+break;
+}
+case kLLMessageBodyTypeGif: {
+LLMessageGifCell *cell = _cell;
+if (!cell) {
+cell = [[LLMessageGifCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseId];
+[cell prepareForUse:messageModel.isFromMe];
+cell.delegate = self;
+}
+cell.messageModel = messageModel;
+
+_cell = cell;
+break;
+}
+case kLLMessageBodyTypeEMLocation: {
+LLMessageLocationCell *cell = _cell;
+if (!cell) {
+cell = [[LLMessageLocationCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseId];
+cell.delegate = self;
+[cell prepareForUse:messageModel.isFromMe];
+}
+cell.messageModel = messageModel;
+
+_cell = cell;
+break;
+}
+case kLLMessageBodyTypeLocation: {
+if (messageModel.fileLocalPath.length > 0) {
+LLMessageLocationCell *cell = _cell;
+if (!cell) {
+cell = [[LLMessageLocationCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseId];
+cell.delegate = self;
+[cell prepareForUse:messageModel.isFromMe];
+}
+
+if (!messageModel.snapshotImage && !messageModel.isLoadingLocationSnapshot) {
+WEAK_SELF;
+messageModel.isLoadingLocationSnapshot = YES;
+[[LLChatManager sharedManager] asynDownloadMessageAttachments:messageModel progress:nil completion:^(LLMessageModel *messageModel, LLError *error) {
+messageModel.isLoadingLocationSnapshot = NO;
+[weakSelf reloadTableRowWithModel:messageModel];
+}];
+}
+if ([messageModel.address isEqualToString:LOCATION_UNKNOWE_ADDRESS] && !messageModel.isFetchingAddress) {
+WEAK_SELF;
+messageModel.isFetchingAddress = YES;
+[[LLChatManager sharedManager] asynReGeocodeMessageModel:messageModel completion:^(LLMessageModel *messageModel, LLError *error) {
+messageModel.isFetchingAddress = NO;
+[weakSelf reloadTableRowWithModel:messageModel];
+}];
+}
+
+cell.messageModel = messageModel;
+_cell = cell;
+}
+
+break;
+}
+case kLLMessageBodyTypeVoice: {
+LLMessageVoiceCell *cell = _cell;
+if (!cell) {
+cell = [[LLMessageVoiceCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseId];
+cell.delegate = self;
+[cell prepareForUse:messageModel.isFromMe];
+}
+cell.messageModel = messageModel;
+
+_cell = cell;
+
+break;
+}
+case kLLMessageBodyTypeRecording: {
+LLMessageRecordingCell *cell = [LLMessageRecordingCell sharedRecordingCell];
+cell.messageModel = messageModel;
+
+_cell = cell;
+break;
+}
+case kLLMessageBodyTypeVideo: {
+LLMessageVideoCell *cell = _cell;
+if (!cell) {
+cell = [[LLMessageVideoCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseId];
+cell.delegate = self;
+[cell prepareForUse:messageModel.isFromMe];
+}
+
+cell.messageModel = messageModel;
+
+_cell = cell;
+
+break;
+}
+
+}
+return _cell;
+
+
+
+
+//    dispatch_async(_messageQueue, ^() {
+//
+//        //从数据库中加载消息
+//        NSInteger num = limit;
+//        NSArray *messageList = [conversationModel.sdk_conversation loadMoreMessagesFromId:conversationModel.referenceMessageModel.messageId limit:(int)num direction:EMMessageSearchDirectionUp];
+//
+//        NSLog(@"从数据库中获取到%ld条消息", messageList.count);
+//        LLMessageListUpdateType updateType = kLLMessageListUpdateTypeLoadMore;
+//
+//        if (messageList.count > 0){
+//            NSMutableArray<LLMessageModel *> *newMessageModels = [NSMutableArray arrayWithCapacity:messageList.count];
+//            [messageList enumerateObjectsUsingBlock:^(EMMessage * _Nonnull message, NSUInteger idx, BOOL * _Nonnull stop) {
+//                LLMessageModel *model = [[LLMessageModel alloc] initWithMessage:message];
+//                [newMessageModels addObject:model];
+//
+//                [self preprocessMessageModel:model priority:kLLMessageDownloadPriorityDefault];
+//            }];
+//
+//            [conversationModel.allMessageModels insertObjects:newMessageModels atIndexes:[NSIndexSet indexSetWithIndexesInRange:NSMakeRange(0, newMessageModels.count)]];
+//        }
+//
+//        WEAK_SELF;
+//        dispatch_async(dispatch_get_main_queue(), ^{
+//            conversationModel.updateType = updateType;
+//            [weakSelf.messageListDelegate loadMoreMessagesDidFinishedWithConversationModel:conversationModel];
+//        });
+//
+//    });
+//
+//
+//    return;
+
+//画出视频开始播放按钮图案
+CGContextAddEllipseInRect(context, CGRectMake(1, 1, HUD_RADIUS * 2 - 2, HUD_RADIUS * 2 - 2));
+CGContextStrokePath(context);
+CGContextFillPath(context);
+
+CGContextSetStrokeColorWithColor(context, [UIColor whiteColor].CGColor);
+CGContextSetLineWidth(context, 1);
+CGPoint point = CGPointMake(HUD_RADIUS - HUD_RADIUS/3, HUD_RADIUS/2);
+CGContextMoveToPoint(context, point.x, point.y);
+CGContextAddLineToPoint(context, point.x, point.y + HUD_RADIUS);
+CGContextAddLineToPoint(context, point.x + HUD_RADIUS, point.y + HUD_RADIUS/2);
+CGContextAddLineToPoint(context, point.x, point.y);
+CGContextStrokePath(context);
+
+
+//- (void)updownCompleteHandler:(NSNotification *)notification {
+//    BOOL isUpload = [notification.name isEqualToString:LLChatManagerUploadCompleteNotification];
+//    LLMessageModel *messageModel = notification.userInfo[LLChatManagerMessageModelKey];
+//    if (!messageModel)
+//        return;
+//
+//    LLError *error = notification.userInfo[LLChatManagerErrorKey];
+//    if ([error isKindOfClass:[NSNull class]]) {
+//        error = nil;
+//    }
+//
+//    WEAK_SELF;
+//    dispatch_async(dispatch_get_main_queue(), ^{
+//        LLMessageBaseCell *baseCell = [weakSelf visibleCellForMessageModel:messageModel];
+//        if (!baseCell)
+//            return;
+//
+//        switch (messageModel.messageBodyType) {
+//            case kLLMessageBodyTypeText:
+//            case kLLMessageBodyTypeGif:
+//            case kLLMessageBodyTypeLocation:
+//                [baseCell updateMessageUploadStatus];
+//                break;
+//
+//            case kLLMessageBodyTypeVideo: {
+//                LLMessageVideoCell *cell = (LLMessageVideoCell *)baseCell;
+//                if (isUpload) {
+//                    [cell uploadResult:!error];
+//                }else {
+//                    [cell downloadResult:!error];
+//                }
+//
+//            }
+//                break;
+//            case kLLMessageBodyTypeImage: {
+//                LLMessageImageCell *cell = (LLMessageImageCell *)baseCell;
+//                if (isUpload) {
+//                    [cell uploadResult:!error];
+//                }else {
+//                    cell.messageModel = messageModel;
+//                }
+//
+//            }
+//                break;
+//            case kLLMessageBodyTypeVoice: {
+//                LLMessageVoiceCell *cell = (LLMessageVoiceCell *)baseCell;
+//                if (isUpload) {
+//                    [cell updateMessageUploadStatus];
+//                }else {
+//
+//                }
+//            }
+//            default:
+//                break;
+//        }
+//    });
+//
+//}
+//
+//- (void)updownProgressHandler:(NSNotification *)notification {
+//    BOOL isUpload = [notification.name isEqualToString:LLChatManagerUploadProgressNotification];
+//    LLMessageModel *messageModel = notification.userInfo[LLChatManagerMessageModelKey];
+//    if (!messageModel)
+//        return;
+//
+//    WEAK_SELF;
+//    dispatch_async(dispatch_get_main_queue(), ^{
+//        LLMessageBaseCell *baseCell = [weakSelf visibleCellForMessageModel:messageModel];
+//        if (!baseCell)
+//            return;
+//
+//        switch (messageModel.messageBodyType) {
+//            case kLLMessageBodyTypeVideo: {
+//                LLMessageVideoCell *cell = (LLMessageVideoCell *)baseCell;
+//                if (isUpload) {
+//                    cell.uploadProgress = messageModel.fileUploadProgress;
+//                }else {
+//                    cell.downloadProgress = messageModel.fileDownloadProgress;
+//                }
+//            }
+//                break;
+//            case kLLMessageBodyTypeImage: {
+//                LLMessageImageCell *cell = (LLMessageImageCell *)baseCell;
+//                if (isUpload) {
+//                   cell.uploadProgress = messageModel.fileUploadProgress;
+//                }else {
+//
+//                }
+//
+//            }
+//                break;
+//            default:
+//                break;
+//        }
+//    });
+//
+//
+//
+//}
+
+//- (void)downloadCompleteHandler:(NSNotification *)notification {
+//
+//}
+
+//- (void)downloadProgressHandler:(NSNotification *)notification {
+//    LLMessageModel *messageModel = notification.userInfo[LLChatManagerMessageModelKey];
+//    if (!messageModel)
+//        return;
+//
+//    LLMessageBaseCell *baseCell = [self visibleCellForMessageModel:messageModel];
+//    if (!baseCell)
+//        return;
+//
+//    switch (messageModel.messageBodyType) {
+//        case kLLMessageBodyTypeVideo: {
+//            LLMessageVideoCell *cell = (LLMessageVideoCell *)baseCell;
+//            cell.downloadProgress = messageModel.fileDownloadProgress;
+//        }
+//            break;
+//        case kLLMessageBodyTypeImage: {
+//            LLMessageImageCell *cell = (LLMessageImageCell *)baseCell;
+////            cell.dow = messageModel.fileUploadProgress;
+//        }
+//            break;
+//        default:
+//            break;
+//    }
+//}
+
+
+
+//        switch (messageModel.messageBodyType) {
+//            case kLLMessageBodyTypeText:
+//            case kLLMessageBodyTypeGif:
+//            case kLLMessageBodyTypeLocation:
+//                [baseCell updateMessageUploadStatus];
+//                break;
+//
+//            case kLLMessageBodyTypeVideo: {
+//                LLMessageVideoCell *cell = (LLMessageVideoCell *)baseCell;
+//                if (isUpload) {
+//                    [cell uploadResult:!error];
+//                }else {
+//                    [cell downloadResult:!error];
+//                }
+//
+//            }
+//                break;
+//            case kLLMessageBodyTypeImage: {
+//                LLMessageImageCell *cell = (LLMessageImageCell *)baseCell;
+//                if (isUpload) {
+//                    [cell uploadResult:!error];
+//                }else {
+//                    cell.messageModel = messageModel;
+//                }
+//
+//            }
+//                break;
+//            case kLLMessageBodyTypeVoice: {
+//                LLMessageVoiceCell *cell = (LLMessageVoiceCell *)baseCell;
+//                if (isUpload) {
+//                    [cell updateMessageUploadStatus];
+//                }else {
+//
+//                }
+//            }
+//            default:
+//                break;
+//        }
+
+
+//    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updownCompleteHandler:) name:LLChatManagerUploadCompleteNotification object:nil];
+//    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updownProgressHandler:) name:LLChatManagerUploadProgressNotification object:nil];
+//
+//    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updownCompleteHandler:) name:LLChatManagerDownloadCompleteNotification object:nil];
+//    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updownProgressHandler:) name:LLChatManagerDownloadProgressNotification object:nil];
+
+
+
+NSArray<UITableViewCell *> *allCells = self.tableView.visibleCells[0].superview.subviews;
+int textCellNum = 0;
+int gifCellNum = 0;
+int imageCellNum = 0;
+int videoCellNum = 0;
+int voiceCellNum = 0;
+int locationCellNum = 0;
+
+
+for (UITableViewCell *cell in allCells) {
+if ([cell isKindOfClass:[LLMessageBaseCell class]]) {
+LLMessageBaseCell *baseCell = (LLMessageBaseCell *)cell;
+switch (baseCell.messageModel.messageBodyType) {
+case kLLMessageBodyTypeText:
+textCellNum ++;
+break;
+case kLLMessageBodyTypeGif:
+gifCellNum ++;
+break;
+case kLLMessageBodyTypeImage:
+imageCellNum ++;
+break;
+case kLLMessageBodyTypeVideo:
+videoCellNum ++;
+break;
+case kLLMessageBodyTypeVoice:
+voiceCellNum ++;
+break;
+case kLLMessageBodyTypeLocation:
+locationCellNum ++;
+break;
+default:
+break;
+}
+}
+}
+
+NSLog(@"当前共有Cell：%d 其中TextCell：%d GIFCell：%d 图片Cell：%d 视频Cell：%d 声音Cell：%d 位置Cell：%d", (int)allCells.count, textCellNum, gifCellNum, imageCellNum, videoCellNum, voiceCellNum, locationCellNum);

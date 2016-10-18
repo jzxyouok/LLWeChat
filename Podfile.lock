@@ -1,0 +1,15 @@
+PODS:
+  - MBProgressHUD (1.0.0)
+  - Reveal-SDK (2)
+
+DEPENDENCIES:
+  - MBProgressHUD (~> 1.0.0)
+  - Reveal-SDK
+
+SPEC CHECKSUMS:
+  MBProgressHUD: 4890f671c94e8a0f3cf959aa731e9de2f036d71a
+  Reveal-SDK: 4d36a47c7091843eee525b72219e005b90bbac0b
+
+PODFILE CHECKSUM: cb625ff457c6d7db34c7a636a912586785bd746b
+
+COCOAPODS: 1.0.1
